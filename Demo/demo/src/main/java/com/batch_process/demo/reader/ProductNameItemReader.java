@@ -18,7 +18,6 @@ public class ProductNameItemReader implements ItemReader<String> {
 
 	@Override
 	public String read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
-		// TODO Auto-generated method stub
 		return this.productListIterator.hasNext() ? this.productListIterator.next() : null;
 	}
 
