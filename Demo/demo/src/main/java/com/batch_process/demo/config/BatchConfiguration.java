@@ -27,6 +27,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import com.batch_process.demo.domain.ProductFieldSetMapper;
 import com.batch_process.demo.domain.ProductRowMapper;
+import com.batch_process.demo.dto.ProductDTO;
 import com.batch_process.demo.entity.Product;
 import com.batch_process.demo.reader.ProductNameItemReader;
 
@@ -74,19 +75,19 @@ public class BatchConfiguration {
 	}
 
 	@Bean
-	public ItemReader<Product> jdbcItemReader() {
-		JdbcCursorItemReader<Product> jdbcCursorItemReader = new JdbcCursorItemReader<Product>();
+	public ItemReader<ProductDTO> jdbcItemReader() {
+		JdbcCursorItemReader<ProductDTO> jdbcCursorItemReader = new JdbcCursorItemReader<ProductDTO>();
 		jdbcCursorItemReader.setDataSource(dataSource);
 		jdbcCursorItemReader.setSql("SELECT * FROM product order by product_id");
 		jdbcCursorItemReader.setRowMapper(new ProductRowMapper());
 		return jdbcCursorItemReader;
 	}
-	
+
 	@Bean
-	public ItemReader<Product> jdbcPageItemReader() throws Exception {
-		JdbcPagingItemReader<Product> jdbcPagingItemReader = new JdbcPagingItemReader<Product>();
+	public ItemReader<ProductDTO> jdbcPageItemReader() throws Exception {
+		JdbcPagingItemReader<ProductDTO> jdbcPagingItemReader = new JdbcPagingItemReader<ProductDTO>();
 		jdbcPagingItemReader.setDataSource(dataSource);
-		
+
 		SqlPagingQueryProviderFactoryBean queryProvider = new SqlPagingQueryProviderFactoryBean();
 		queryProvider.setSelectClause("SELECT product_id, product_name, product_category, product_price");
 		queryProvider.setFromClause("FROM product");
@@ -95,16 +96,16 @@ public class BatchConfiguration {
 		jdbcPagingItemReader.setQueryProvider(queryProvider.getObject());
 		jdbcPagingItemReader.setRowMapper(new ProductRowMapper());
 		jdbcPagingItemReader.setPageSize(3); // kept same as chunk size
-		
+
 		return jdbcPagingItemReader;
 	}
-	
+
 	@Bean
 	public Job firstJob() throws Exception {
 		return new JobBuilder("firstJob", jobRepository).start(firstStep()).build();
 	}
 
-//	// Item Reader reading List of String and Item Writer Printing Chunk
+//	// Item Reader reading List of Product Names and Item Writer Printing Chunk
 //	@Bean
 //	public Step firstStep() {
 //		return new StepBuilder("firstStep", jobRepository).<String, String>chunk(3, transactionManager)
@@ -138,7 +139,7 @@ public class BatchConfiguration {
 //				}).build();
 //	}
 
-//	// Item Reader reading Database and Item Writer Printing Product
+//	// Item Reader reading Database and Item Writer Printing ProductDTO
 //	@Bean
 //	public Step firstStep() {
 //		return new StepBuilder("firstStep", jobRepository).<Product, Product>chunk(3, transactionManager)
@@ -154,21 +155,19 @@ public class BatchConfiguration {
 //
 //				}).build();
 //	}
-	
-	// Item Reader reading Database and Item Writer Printing Product
-		@Bean
-		public Step firstStep() throws Exception {
-			return new StepBuilder("firstStep", jobRepository).<Product, Product>chunk(3, transactionManager)
-					.reader(jdbcPageItemReader()).writer(new ItemWriter<Product>() {
 
-						@Override
-						public void write(Chunk<? extends Product> chunk) throws Exception {
-							// TODO Auto-generated method stub
-							System.out.println("JDBC Page Item Chunk Processing Started ====>");
-							chunk.forEach(System.out::println);
-							System.out.println("JDBC Page Item Chunk Processing Ended <====");
-						}
+	// Item Reader reading Database and Item Writer Printing ProductDTO
+	@Bean
+	public Step firstStep() throws Exception {
+		return new StepBuilder("firstStep", jobRepository).<ProductDTO, ProductDTO>chunk(3, transactionManager)
+				.reader(jdbcPageItemReader()).writer(new ItemWriter<ProductDTO>() {
 
-					}).build();
-		}
+					@Override
+					public void write(Chunk<? extends ProductDTO> chunk) {
+						System.out.println("JDBC Page Item Chunk Processing Started ====>");
+						chunk.forEach(System.out::println);
+						System.out.println("JDBC Page Item Chunk Processing Ended <====");
+					}
+				}).build();
+	}
 }
