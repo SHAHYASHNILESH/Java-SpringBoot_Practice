@@ -147,9 +147,9 @@ public class BatchConfiguration {
 //					@Override
 //					public void write(Chunk<? extends Product> chunk) throws Exception {
 //						// TODO Auto-generated method stub
-//						System.out.println("JDBC Chunk Processing Started ====>");
+//						System.out.println("JDBC Cursor Chunk Processing Started ====>");
 //						chunk.forEach(System.out::println);
-//						System.out.println("JDBC Chunk Processing Ended <====");
+//						System.out.println("JDBC Cursor Chunk Processing Ended <====");
 //					}
 //
 //				}).build();
@@ -166,7 +166,7 @@ public class BatchConfiguration {
 							// TODO Auto-generated method stub
 							System.out.println("JDBC Page Item Chunk Processing Started ====>");
 							chunk.forEach(System.out::println);
-							System.out.println("JDBC JDBC Page Item Chunk Processing Ended <====");
+							System.out.println("JDBC Page Item Chunk Processing Ended <====");
 						}
 
 					}).build();
