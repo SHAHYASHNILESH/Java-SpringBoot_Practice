@@ -10,9 +10,9 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.JdbcPagingItemReader;
@@ -131,6 +131,16 @@ public class BatchConfiguration {
 	}
 
 	@Bean
+	public JdbcBatchItemWriter<ProductDTO> jdbcBatchItemWriterNew() throws Exception {
+		JdbcBatchItemWriter<ProductDTO> jdbcBatchItemWriter = new JdbcBatchItemWriter<ProductDTO>();
+		jdbcBatchItemWriter.setDataSource(dataSource);
+		jdbcBatchItemWriter
+				.setSql("INSERT INTO product_output values(:productId, :productName, :productCategory, :productPrice)");
+		jdbcBatchItemWriter.setItemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider());
+		return jdbcBatchItemWriter;
+	}
+
+	@Bean
 	public Job firstJob() throws Exception {
 		return new JobBuilder("firstJob", jobRepository).start(firstStep()).build();
 	}
@@ -208,10 +218,17 @@ public class BatchConfiguration {
 //				.reader(jdbcPageItemReader()).writer(flatFileItemWriter()).build();
 //	}
 
+//	// Item Reader reading Database and JDBC Batch Item Writer Saving Product to DB
+//	@Bean
+//	public Step firstStep() throws Exception {
+//		return new StepBuilder("firstStep", jobRepository).<ProductDTO, ProductDTO>chunk(3, transactionManager)
+//				.reader(jdbcPageItemReader()).writer(jdbcBatchItemWriter()).build();
+//	}
+
 	// Item Reader reading Database and JDBC Batch Item Writer Saving Product to DB
 	@Bean
 	public Step firstStep() throws Exception {
 		return new StepBuilder("firstStep", jobRepository).<ProductDTO, ProductDTO>chunk(3, transactionManager)
-				.reader(jdbcPageItemReader()).writer(jdbcBatchItemWriter()).build();
+				.reader(jdbcPageItemReader()).writer(jdbcBatchItemWriterNew()).build();
 	}
 }
