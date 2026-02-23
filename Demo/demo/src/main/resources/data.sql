@@ -5,3 +5,5 @@ INSERT INTO product VALUES (2,'iPad Mini','Tablets',800);
 INSERT INTO product VALUES (3,'Canon 1500D','Cameras',500);
 INSERT INTO product VALUES (4,'LG 4K Ultra HD TV','Televisions',300);
 INSERT INTO product VALUES (5,'Goalkeeper Gloves','Sports Accessories',100);
+
+CREATE TABLE product_output (product_id INT PRIMARY KEY,product_name VARCHAR(255),product_category VARCHAR(255),product_price INT);
