@@ -24,6 +24,8 @@ import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
 import org.springframework.batch.item.file.transform.DelimitedLineAggregator;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.item.validator.BeanValidatingItemProcessor;
+import org.springframework.batch.item.validator.ValidatingItemProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,9 +37,11 @@ import com.batch_process.demo.domain.OSProductItemProcessor;
 import com.batch_process.demo.domain.ProductFieldSetMapper;
 import com.batch_process.demo.domain.ProductPreparedStatementSetter;
 import com.batch_process.demo.domain.ProductRowMapper;
+import com.batch_process.demo.domain.ProductValidator;
 import com.batch_process.demo.dto.OSProductDTO;
 import com.batch_process.demo.dto.ProductDTO;
 import com.batch_process.demo.entity.Product;
+import com.batch_process.demo.processor.FilterProductItemProcessor;
 import com.batch_process.demo.processor.MyProductItemProcessor;
 import com.batch_process.demo.reader.ProductNameItemReader;
 
@@ -124,7 +128,7 @@ public class BatchConfiguration {
 		flatFileItemWriter.setLineAggregator(delimitedLineAggregator);
 		return flatFileItemWriter;
 	}
-	
+
 	@Bean
 	public ItemWriter<OSProductDTO> flatFileItemWriter2() {
 		FlatFileItemWriter<OSProductDTO> flatFileItemWriter = new FlatFileItemWriter<OSProductDTO>();
@@ -133,12 +137,12 @@ public class BatchConfiguration {
 		delimitedLineAggregator.setDelimiter(",");
 
 		BeanWrapperFieldExtractor<OSProductDTO> beanWrapperFieldExtractor = new BeanWrapperFieldExtractor<OSProductDTO>();
-		beanWrapperFieldExtractor
-				.setNames(new String[] { "productId", "productName", "productCategory", "productPrice","taxPercent","sku","shippingRate" });
+		beanWrapperFieldExtractor.setNames(new String[] { "productId", "productName", "productCategory", "productPrice",
+				"taxPercent", "sku", "shippingRate" });
 		delimitedLineAggregator.setFieldExtractor(beanWrapperFieldExtractor);
 		flatFileItemWriter.setLineAggregator(delimitedLineAggregator);
 		return flatFileItemWriter;
-		
+
 	}
 
 	@Bean
@@ -178,6 +182,26 @@ public class BatchConfiguration {
 	@Bean
 	public ItemProcessor<ProductDTO, OSProductDTO> itemProcessor2() {
 		return new OSProductItemProcessor();
+	}
+
+	@Bean
+	public ItemProcessor<ProductDTO, ProductDTO> filterDataItemProcessor() {
+		return new FilterProductItemProcessor();
+	}
+
+	@Bean
+	public ValidatingItemProcessor<ProductDTO> validatingItemProcessor() {
+		ValidatingItemProcessor<ProductDTO> validatingItemProcessor = new ValidatingItemProcessor<ProductDTO>(
+				new ProductValidator());
+		validatingItemProcessor.setFilter(true); // filters item which is not valid as per conditions
+		return validatingItemProcessor;
+	}
+
+	@Bean
+	public BeanValidatingItemProcessor<ProductDTO> beanValidatingProcessor() {
+		BeanValidatingItemProcessor<ProductDTO> validatingItemProcessor = new BeanValidatingItemProcessor<>();
+		validatingItemProcessor.setFilter(true);
+		return validatingItemProcessor;
 	}
 
 	@Bean
@@ -280,11 +304,38 @@ public class BatchConfiguration {
 //				.reader(jdbcPageItemReader()).processor(itemProcessor()).writer(jdbcBatchItemWriterNew()).build();
 //	}
 
-	// ItemReader reading database, ItemProcessor processing it and
-	// JDBCBatchItemWriter saving osproduct to output DB
+//	// ItemReader reading database, ItemProcessor processing it and
+//	// JDBCBatchItemWriter saving osproduct to output DB
+//	@Bean
+//	public Step firstStep() throws Exception {
+//		return new StepBuilder("firstStep", jobRepository).<ProductDTO, OSProductDTO>chunk(3, transactionManager)
+//				.reader(jdbcPageItemReader()).processor(itemProcessor2()).writer(flatFileItemWriter2()).build();
+//	}
+
+//	// ItemReader reading database, ItemProcessor processing it and
+//	// JDBCBatchItemWriter saving product to output DB
+//	@Bean
+//	public Step firstStep() throws Exception {
+//		return new StepBuilder("firstStep", jobRepository).<ProductDTO, ProductDTO>chunk(3, transactionManager)
+//				.reader(jdbcPageItemReader()).processor(filterDataItemProcessor()).writer(jdbcBatchItemWriterNew())
+//				.build();
+//	}
+
+//	// ItemReader reading database, ValidatingItemProcessor processing it and
+//	// JDBCBatchItemWriter saving product to output DB
+//	@Bean
+//	public Step firstStep() throws Exception {
+//		return new StepBuilder("firstStep", jobRepository).<ProductDTO, ProductDTO>chunk(3, transactionManager)
+//				.reader(jdbcPageItemReader()).processor(validatingItemProcessor()).writer(jdbcBatchItemWriterNew())
+//				.build();
+//	}
+
+	// ItemReader reading database, ValidatingItemProcessor processing it and
+	// JDBCBatchItemWriter saving product to output DB
 	@Bean
 	public Step firstStep() throws Exception {
-		return new StepBuilder("firstStep", jobRepository).<ProductDTO, OSProductDTO>chunk(3, transactionManager)
-				.reader(jdbcPageItemReader()).processor(itemProcessor2()).writer(flatFileItemWriter2()).build();
+		return new StepBuilder("firstStep", jobRepository).<ProductDTO, ProductDTO>chunk(3, transactionManager)
+				.reader(jdbcPageItemReader()).processor(beanValidatingProcessor()).writer(jdbcBatchItemWriterNew())
+				.build();
 	}
 }
